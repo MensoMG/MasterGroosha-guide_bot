@@ -1,0 +1,3 @@
+PyTelegramBotAPI==4.5.1
+python-json-logger==2.0.2
+cherrypy==18.6.1
