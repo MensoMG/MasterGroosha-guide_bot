@@ -1,24 +1,22 @@
 import telebot
 import random
 import utils
-import cherrypy
-import os
+import logging
 
 from SQLighter import MusicManager, UserManager
+from bot_config import *
 from telebot import types
-from os import listdir
 from time import sleep
+from os import listdir
 
-token = os.environ.get('token')
+
+logger = logging.getLogger(__name__)
 bot = telebot.TeleBot(token)
 
-database_name = os.getenv('database_name')
-shelve_name = os.getenv('shelve_name')
 
-
-@bot.message_handler(commands=['json'])
-def message_get(message):
-    bot.send_message(message.from_user.id, message)
+@bot.message_handler(commands=['start'])
+def init_user(message):
+    utils.init_user(message.from_user.id, message.from_user.first_name)
 
 
 @bot.message_handler(commands=['stats'])
@@ -27,14 +25,9 @@ def get_stats(message):
     cursor = connect.cursor
     wins = cursor.execute('''SELECT win_count, loose_count FROM users WHERE user_id = ?''',
                           (message.from_user.id,)).fetchall()[0]
-    print(wins, type(wins))
+    # нужно сделать склонение чисел, вместо "4 раз" должно быть "4 разА" и т.д
     bot.send_message(message.from_user.id, f'Вы угадали мелодию {wins[0]} раз :)\nИ обосрались {wins[1]} раз  ;)')
     connect.close()
-
-
-@bot.message_handler(commands=['start'])
-def init_user(message):
-    utils.init_user(message.from_user.id, message.from_user.first_name)
 
 
 @bot.message_handler(commands=['game'])
@@ -56,13 +49,11 @@ def find_file_ids(message):
             f = open('music/' + file, 'rb')
             res = bot.send_voice(message.from_user.id, f, None)
             bot.send_message(message.from_user.id, res.voice.file_id, reply_to_message_id=res.message_id)
-            print(res.voice)
         sleep(2)
 
 
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def check_answer(message):
-    # print(message)
     answer = utils.get_answer_for_user(message.from_user.id, message.from_user.id)
 
     if not answer:
@@ -81,19 +72,7 @@ def check_answer(message):
         utils.finish_user_game(message.from_user.id, message.from_user.id)
 
 
-utils.count_rows()
-random.seed()
-bot.remove_webhook()
-
-bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH,
-                certificate=open(WEBHOOK_SSL_CERT, 'r'))
-
-cherrypy.config.update({
-    'server.socket_host': WEBHOOK_LISTEN,
-    'server.socket_port': WEBHOOK_PORT,
-    'server.ssl_module': 'builtin',
-    'server.ssl_certificate': WEBHOOK_SSL_CERT,
-    'server.ssl_private_key': WEBHOOK_SSL_PRIV
-})
-
-cherrypy.quickstart(WebhookServer(), WEBHOOK_URL_PATH, {'/': {}},)
+if __name__ == '__main__':
+    utils.count_rows()
+    random.seed()
+    bot.infinity_polling()

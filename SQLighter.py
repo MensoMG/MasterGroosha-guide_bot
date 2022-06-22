@@ -1,4 +1,7 @@
 import sqlite3
+import logging
+
+logger = logging.getLogger('db_manager')
 
 
 class BaseManager:
@@ -7,24 +10,20 @@ class BaseManager:
         self.cursor = self.connection.cursor()
 
     def close(self):
-        """ Закрываем текущее соединение с БД """
         self.connection.close()
 
 
 class MusicManager(BaseManager):
 
     def select_all(self):
-        """ Получаем все строки """
         with self.connection:
             return self.cursor.execute('''SELECT * FROM music''').fetchall()
 
     def select_single(self, rownum):
-        """ Получаем одну строку с номером rownum """
         with self.connection:
             return self.cursor.execute('''SELECT * FROM music WHERE id = ?''', (rownum,)).fetchall()[0]
 
     def count_rows(self):
-        """ Считаем количество строк """
         with self.connection:
             result = self.cursor.execute('''SELECT * FROM music''').fetchall()
             return len(result)

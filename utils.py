@@ -1,9 +1,13 @@
 import shelve
+import logging
 
 from telebot import types
 from random import shuffle
 from SQLighter import MusicManager, UserManager
 from bot_config import database_name, shelve_name
+
+
+logger = logging.getLogger('utils_module')
 
 
 def count_rows():
